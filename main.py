@@ -19,7 +19,7 @@ from model import simulate
 from parameters import make_params
 
 
-DEFAULT_RHOS = [0.0, 0.2, 0.5]
+DEFAULT_RHOS = [0.05, 0.1, 0.15]
 
 
 def _parse_rhos(user_input: str, default: Iterable[float]) -> List[float]:
@@ -56,7 +56,7 @@ def plot_tau(results: List[dict]) -> None:
     plt.figure(figsize=(7, 4))
     for res in results:
         plt.plot(res["t"], res["tau"], label=f"rho={res['rho']:.2f}")
-    plt.xlabel("Temps")
+    plt.xlabel("Temps (en mois)")
     plt.ylabel("tau(t) = U / (U + E)")
     plt.title("Comparaison du taux de chômage tau(t)")
     plt.grid(True, alpha=0.3)
@@ -72,7 +72,7 @@ def plot_states(results: List[dict]) -> None:
             ax.plot(res["t"], res[key], label=f"rho={res['rho']:.2f}")
         ax.set_ylabel(label)
         ax.grid(True, alpha=0.3)
-    axes[-1].set_xlabel("Temps")
+    axes[-1].set_xlabel("Temps en mois")
     axes[0].legend()
     fig.suptitle("État des stocks U, E, V")
 
