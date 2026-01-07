@@ -58,33 +58,35 @@ def _financial_channels(
 
 def make_params(rho: float) -> Params:
     
-    Ay = 3000.0  
-    omega = 1.0 / 48.0  
-    k = 2.5e-6  
-    mu = 1.0 / 120.0  
-    lambda_ = 1.0 / 36.0  
-    alpha = 1.0 / 18.0  
-    delta = 1.0 / 8.0  
+    # Flux entrants (mois)
+    Ay = 25_000          # diplômés / mois
 
-    # santé financière
-    sigma0 = 0.05  
-    q0 = 0.08  
-    beta0 = 1.0 / 6.0  
-    gamma = 1.5  
-    eps = 1.1  
+    # Cohorte jeunes
+    omega = 1.0 / 48.0   # sort après 4 ans
+    mu = 1.0 / 600.0     # sortie exogène faible
+    alpha = 0.0          # retraite = 0 chez les jeunes
+    lambda_ = 0.01       # petit canal U -> E (si tu le gardes)
+    k = 3.0e-6           # matching
+    delta = 0.02         # destruction de postes (lent)
+
+    # Santé financière
+    sigma0 = 0.10        # création d'offres juniors
+    q0 = 0.20
+    beta0 = 0.015        # job cut
+    gamma = 3.0
+    eps = 1.0
 
     sigma_rho, q_rho, beta_rho = _financial_channels(rho, sigma0, q0, beta0, gamma, eps)
 
-    # condition initiales 
-    U0 = 25_000.0
-    E0 = 90_000.0
-    V0 = 30_000.0
+    # Conditions initiales : tau(0)=20%
+    U0 = 200_000
+    E0 = 800_000
+    V0 = 40_000
 
-    # Numerical settings
-    dt = 0.5  # mois
-    T = 120.0  # mois (10 years)
+    dt = 0.5
+    T = 120.0
     tol = 1e-8
-    max_iter = 25 
+    max_iter = 25
 
     return Params(
         Ay=Ay,

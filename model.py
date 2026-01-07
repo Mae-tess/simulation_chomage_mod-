@@ -1,5 +1,5 @@
 """
-ODE model and implicit integration (Backward Euler) for youth unemployment dynamics.
+Modèle ODE et intégration implicite pour la dynamique du chômage des jeunes diplômés.
 """
 
 from typing import List, Tuple
@@ -10,7 +10,7 @@ from parameters import Params
 
 
 def f(x: np.ndarray, params: Params) -> np.ndarray:
-    """Compute the time derivative [dU, dE, dV] at state x = [U, E, V]."""
+    """Calcule les dérivées [dU, dE, dV] au point x = [U, E, V]."""
     U, E, V = x
     beta = params.beta_rho
     sigma = params.sigma_rho
@@ -30,7 +30,7 @@ def f(x: np.ndarray, params: Params) -> np.ndarray:
 
 
 def jacobian_f(x: np.ndarray, params: Params) -> np.ndarray:
-    """Jacobian of f with respect to [U, E, V]."""
+    """Jacobienne de f par rapport à [U, E, V]."""
     U, E, V = x
     beta = params.beta_rho
     sigma = params.sigma_rho
@@ -65,35 +65,38 @@ def jacobian_f(x: np.ndarray, params: Params) -> np.ndarray:
 
 
 def residual(x_next: np.ndarray, x_n: np.ndarray, params: Params) -> np.ndarray:
-    """Residual F(x_{n+1}) for the implicit Euler step: x_{n+1} - x_n - dt * f(x_{n+1})."""
+    """Résidu F(x_{n+1}) pour Euler implicite : x_{n+1} - x_n - dt * f(x_{n+1})."""
     return x_next - x_n - params.dt * f(x_next, params)
 
 
 def step_backward_euler(x_n: np.ndarray, params: Params) -> Tuple[np.ndarray, bool, str]:
     """
-    Single Backward Euler step solved by Newton-Raphson.
+    Effectue un pas d'Euler implicite résolu par Newton-Raphson.
 
-    Returns:
-        x_next: state at the next time step (clipped to non-negative).
-        success: False if Newton failed to converge.
-        message: diagnostic text when success is False.
+    Retourne :
+        x_next : état au pas suivant (recadré en valeurs positives).
+        success : False si Newton n'a pas convergé.
+        message : diagnostic lorsque success est False.
     """
-    x = np.maximum(x_n, 0.0)  # start from previous step, enforce non-negativity
+    # Point de départ : le pas précédent, en forçant U,E,V >= 0
+    x = np.maximum(x_n, 0.0)
     success = False
     message = ""
 
     for _ in range(params.max_iter):
+        # F(x_{n+1}) = x_{n+1} - x_n - dt * f(x_{n+1})
         F = residual(x, x_n, params)
         J = jacobian_f(x, params)
+        # Jacobienne du résidu : I - dt * J
         J_F = np.eye(3) - params.dt * J
         try:
-            delta = np.linalg.solve(J_F, -F)
+            delta = np.linalg.solve(J_F, -F)  # résolution du système linéaire
         except np.linalg.LinAlgError as exc:
             message = f"Jacobian solve failed: {exc}"
             break
 
         x = x + delta
-        x = np.maximum(x, 0.0)  # keep states feasible
+        x = np.maximum(x, 0.0)  # on reste dans le domaine U,E,V >= 0
 
         if np.linalg.norm(delta, ord=2) < params.tol:
             success = True
@@ -107,13 +110,13 @@ def step_backward_euler(x_n: np.ndarray, params: Params) -> Tuple[np.ndarray, bo
 
 def simulate(params: Params) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, List[str]]:
     """
-    Run the simulation over [0, T] with Backward Euler.
+    Simule sur [0, T] avec Euler implicite.
 
-    Returns:
-        t: time grid
-        U, E, V: trajectories
-        tau: unemployment ratio U / (U + E)
-        errors: list of Newton failure messages with time-step context
+    Retourne :
+        t : grille temporelle
+        U, E, V : trajectoires
+        tau : ratio de chômage U / (U + E)
+        errors : messages d'échec de Newton avec le pas concerné
     """
     n_steps = params.n_steps
     t = np.linspace(0.0, params.T, n_steps + 1)
